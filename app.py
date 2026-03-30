@@ -3,15 +3,14 @@ import google.generativeai as genai
 
 st.set_page_config(layout="wide", page_title="MASS-Py Workspace")
 
-# --- จุดเปลี่ยนสำคัญ: ดึงกุญแจจากตู้เซฟ Streamlit Secrets แทนการพิมพ์รหัสตรงๆ ---
+# --- 1. ดึงกุญแจจากตู้เซฟ ---
 try:
     API_KEY = st.secrets["API_KEY"]
     genai.configure(api_key=API_KEY)
 except Exception as e:
-    st.error("🚨 ไม่พบกุญแจ API กรุณาตรวจสอบการตั้งค่า Streamlit Secrets")
+    st.error("🚨 ไม่พบกุญแจ API กรุณาตรวจสอบ Streamlit Secrets")
     st.stop()
 
-# ระบบเลือก AI อัตโนมัติ
 def get_working_model():
     try:
         for m in genai.list_models():
@@ -27,29 +26,55 @@ col1, col2 = st.columns([0.4, 0.6])
 
 with col1:
     st.subheader("🤖 เรียกใช้ AI Agents")
+    
+    # เมนูเลือกบัดดี้
     agent = st.selectbox("เลือกบัดดี้ของคุณ:", ["1. สถาปนิกตรรกะ (ช่วยวางแผน)", "2. บัดดี้เขียนโค้ด (ช่วยไวยากรณ์)", "3. สารวัตรนักสืบ (ช่วยแก้ Error)"])
     
-    if "1" in agent:
-        system_prompt = "คุณคือสถาปนิกตรรกะ ช่วยเด็ก ม.3 วางแผนตรรกะ Python ห้ามให้โค้ดเด็ดขาด ให้ถามนำเพื่อเขียน Pseudocode"
-    elif "2" in agent:
-        system_prompt = "คุณคือบัดดี้เขียนโค้ด ช่วยเด็ก ม.3 เขียน Python ห้ามพิมพ์ Code Block ยาวๆ ให้บอกใบ้โครงสร้าง"
-    else:
-        system_prompt = "คุณคือสารวัตรนักสืบ ช่วยเด็กวิเคราะห์ Error ห้ามแก้โค้ดให้ แต่ให้บอกใบ้ 3 ข้อว่าควรไปเช็คตรงไหน"
+    # --- 2. ระบบความจำ (ถ้าเปลี่ยนตัวบัดดี้ ให้ล้างความจำใหม่) ---
+    if "current_agent" not in st.session_state or st.session_state.current_agent != agent:
+        st.session_state.current_agent = agent
+        st.session_state.messages = [] # ล้างหน้าจอแชท
+        model = get_working_model()
+        # เปิดโหมด "แชทต่อเนื่อง" ของ Gemini
+        st.session_state.chat_session = model.start_chat(history=[]) 
 
-    user_input = st.text_area("พิมพ์ปรึกษาบัดดี้ที่นี่:", height=150)
-    
-    if st.button("ส่งข้อความ"):
-        if user_input:
-            with st.spinner("บัดดี้กำลังคิด..."):
-                try:
-                    model = get_working_model()
-                    response = model.generate_content(system_prompt + "\nคำถามจากนักเรียน: " + user_input)
-                    st.success(response.text)
-                except Exception as e:
-                    st.error("🚨 เกิดข้อผิดพลาดในการประมวลผล")
-                    st.warning(str(e))
-        else:
-            st.warning("กรุณาพิมพ์ข้อความก่อนครับ!")
+    # กำหนดนิสัย AI (System Prompt)
+    if "1" in agent:
+        sys_prompt = "คุณคือสถาปนิกตรรกะ ช่วยเด็ก ม.3 วางแผนตรรกะ Python ห้ามให้โค้ดเด็ดขาด ให้ถามนำเพื่อเขียน Pseudocode"
+    elif "2" in agent:
+        sys_prompt = "คุณคือบัดดี้เขียนโค้ด ช่วยเด็ก ม.3 เขียน Python ห้ามพิมพ์ Code Block ยาวๆ ให้บอกใบ้โครงสร้าง"
+    else:
+        sys_prompt = "คุณคือสารวัตรนักสืบ ช่วยเด็กวิเคราะห์ Error ห้ามแก้โค้ดให้ แต่ให้บอกใบ้ 3 ข้อว่าควรไปเช็คตรงไหน"
+
+    # --- 3. แสดงประวัติการแชทบนหน้าจอ ---
+    # โค้ดส่วนนี้จะดึงข้อความเก่าๆ มาวาดบนจอใหม่ทุกครั้ง ทำให้แชทไม่หาย
+    for msg in st.session_state.messages:
+        with st.chat_message(msg["role"]):
+            st.markdown(msg["content"])
+
+    # --- 4. ช่องแชทแบบใหม่ (เหมือน ChatGPT) ---
+    if prompt := st.chat_input("พิมพ์ปรึกษาบัดดี้ที่นี่..."):
+        # 4.1 แสดงข้อความที่เด็กพิมพ์
+        with st.chat_message("user"):
+            st.markdown(prompt)
+        # บันทึกลงสมอง
+        st.session_state.messages.append({"role": "user", "content": prompt})
+        
+        # 4.2 ให้ AI คิดและตอบกลับ (จำบริบทเดิมได้)
+        with st.spinner("บัดดี้กำลังคิด..."):
+            try:
+                # แอบแนบกฎเหล็กไปกับคำถามเด็กเสมอ เพื่อไม่ให้ AI หลุดบทบาท
+                full_prompt = f"[คำสั่งบังคับ: {sys_prompt}]\nคำถามของนักเรียน: {prompt}"
+                response = st.session_state.chat_session.send_message(full_prompt)
+                
+                # แสดงคำตอบ AI
+                with st.chat_message("assistant"):
+                    st.markdown(response.text)
+                # บันทึกคำตอบลงสมอง
+                st.session_state.messages.append({"role": "assistant", "content": response.text})
+            except Exception as e:
+                st.error("🚨 เกิดข้อผิดพลาดในการประมวลผล")
+                st.warning(str(e))
 
 with col2:
     st.subheader("💻 พื้นที่ปฏิบัติการ (Coding Zone)")
