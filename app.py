@@ -3,14 +3,24 @@ import google.generativeai as genai
 
 st.set_page_config(layout="wide", page_title="MASS-Py Workspace")
 
-# --- จุดที่ 1: วาง API KEY ของคุณครูในเครื่องหมายคำพูดด้านล่างนี้ ---
-API_KEY = "AIzaSyBvpP_kLWH1iW6D5GTahf8CqYVdZK3l7W8" 
+# --- 1. ใส่รหัส API KEY ของคุณครูตรงนี้ ---
+API_KEY = "AIzaSyBvpP_kLWH1iW6D5GTahf8CqYVdZK3l7W8นี้" 
 
-# เชื่อมต่อระบบ AI
 genai.configure(api_key=API_KEY)
-model = genai.GenerativeModel('gemini-pro')
 
-st.title("🚀 MASS-Py: Mission Control (Python & AI Agents)")
+# --- 2. ระบบสแกนหา AI ที่ใช้งานได้อัตโนมัติ (ไม้ตาย!) ---
+def get_working_model():
+    try:
+        # ให้ระบบวิ่งไปเช็คว่า API นี้ใช้โมเดลชื่ออะไรได้บ้าง
+        for m in genai.list_models():
+            if 'generateContent' in m.supported_generation_methods:
+                return genai.GenerativeModel(m.name)
+    except Exception as e:
+        pass
+    # ถ้าหาไม่เจอจริงๆ จะบังคับใช้รุ่นล่าสุด
+    return genai.GenerativeModel('gemini-1.5-flash')
+
+st.title("🚀 MASS-Py: Mission Control")
 
 col1, col2 = st.columns([0.4, 0.6])
 
@@ -31,14 +41,13 @@ with col1:
         if user_input:
             with st.spinner("บัดดี้กำลังคิด..."):
                 try:
-                    # พยายามเรียก AI
+                    # ดึงเอา AI ตัวที่พร้อมใช้งานมาตอบ
+                    model = get_working_model()
                     response = model.generate_content(system_prompt + "\nคำถามจากนักเรียน: " + user_input)
                     st.success(response.text)
                 except Exception as e:
-                    # ถ้าพัง จะแจ้งเตือนตรงนี้แทนจอแดงๆ
-                    st.error("🚨 เกิดปัญหาการเชื่อมต่อกับ Google AI")
-                    st.warning(f"สาเหตุ: {e}")
-                    st.info("💡 ข้อแนะนำ: กรุณากลับไปเช็คว่าใส่ API_KEY ในไฟล์ app.py ถูกต้องครบถ้วนหรือไม่")
+                    st.error("🚨 ระบบ API ขัดข้อง กรุณาเช็คว่าใส่ API KEY ถูกต้องและไม่มีเว้นวรรคส่วนเกิน")
+                    st.warning(f"รายละเอียดเชิงลึก: {e}")
         else:
             st.warning("กรุณาพิมพ์ข้อความก่อนครับ!")
 
