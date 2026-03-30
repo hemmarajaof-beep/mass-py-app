@@ -8,7 +8,7 @@ st.set_page_config(layout="wide", page_title="MASS-Py Workspace")
 # ลบคำว่า ใส่รหัส_API_ของคุณครูที่นี่ และเอาตัวเลขยาวๆ จากด่านที่ 1 มาวางแทน (ให้อยู่ในเครื่องหมายคำพูด)
 API_KEY = "AIzaSyBvpP_kLWH1iW6D5GTahf8CqYVdZK3l7W8" 
 genai.configure(api_key=API_KEY)
-model = genai.GenerativeModel('gemini-1.5-pro')
+model = genai.GenerativeModel('gemini-1.5-flash')
 
 st.title("🚀 MASS-Py: Mission Control (Python & AI Agents)")
 
