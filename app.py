@@ -3,7 +3,7 @@ import google.generativeai as genai
 
 st.set_page_config(layout="wide", page_title="MASS-Py Workspace")
 
-# --- 1. ดึงกุญแจจากตู้เซฟ ---
+# --- 1. ดึงกุญแจ API อย่างปลอดภัย ---
 try:
     API_KEY = st.secrets["API_KEY"]
     genai.configure(api_key=API_KEY)
@@ -24,21 +24,19 @@ st.title("🚀 MASS-Py: Mission Control")
 
 col1, col2 = st.columns([0.4, 0.6])
 
+# ================= ฝั่งซ้าย: AI แชท =================
 with col1:
     st.subheader("🤖 เรียกใช้ AI Agents")
     
-    # เมนูเลือกบัดดี้
     agent = st.selectbox("เลือกบัดดี้ของคุณ:", ["1. สถาปนิกตรรกะ (ช่วยวางแผน)", "2. บัดดี้เขียนโค้ด (ช่วยไวยากรณ์)", "3. สารวัตรนักสืบ (ช่วยแก้ Error)"])
     
-    # --- 2. ระบบความจำ (ถ้าเปลี่ยนตัวบัดดี้ ให้ล้างความจำใหม่) ---
+    # ระบบความจำและล้างสมองเมื่อเปลี่ยนบัดดี้
     if "current_agent" not in st.session_state or st.session_state.current_agent != agent:
         st.session_state.current_agent = agent
-        st.session_state.messages = [] # ล้างหน้าจอแชท
+        st.session_state.messages = []
         model = get_working_model()
-        # เปิดโหมด "แชทต่อเนื่อง" ของ Gemini
-        st.session_state.chat_session = model.start_chat(history=[]) 
+        st.session_state.chat_session = model.start_chat(history=[])
 
-    # กำหนดนิสัย AI (System Prompt)
     if "1" in agent:
         sys_prompt = "คุณคือสถาปนิกตรรกะ ช่วยเด็ก ม.3 วางแผนตรรกะ Python ห้ามให้โค้ดเด็ดขาด ให้ถามนำเพื่อเขียน Pseudocode"
     elif "2" in agent:
@@ -46,43 +44,53 @@ with col1:
     else:
         sys_prompt = "คุณคือสารวัตรนักสืบ ช่วยเด็กวิเคราะห์ Error ห้ามแก้โค้ดให้ แต่ให้บอกใบ้ 3 ข้อว่าควรไปเช็คตรงไหน"
 
-    # --- 3. แสดงประวัติการแชทบนหน้าจอ ---
-    # โค้ดส่วนนี้จะดึงข้อความเก่าๆ มาวาดบนจอใหม่ทุกครั้ง ทำให้แชทไม่หาย
     for msg in st.session_state.messages:
         with st.chat_message(msg["role"]):
             st.markdown(msg["content"])
 
-    # --- 4. ช่องแชทแบบใหม่ (เหมือน ChatGPT) ---
     if prompt := st.chat_input("พิมพ์ปรึกษาบัดดี้ที่นี่..."):
-        # 4.1 แสดงข้อความที่เด็กพิมพ์
         with st.chat_message("user"):
             st.markdown(prompt)
-        # บันทึกลงสมอง
         st.session_state.messages.append({"role": "user", "content": prompt})
         
-        # 4.2 ให้ AI คิดและตอบกลับ (จำบริบทเดิมได้)
         with st.spinner("บัดดี้กำลังคิด..."):
             try:
-                # แอบแนบกฎเหล็กไปกับคำถามเด็กเสมอ เพื่อไม่ให้ AI หลุดบทบาท
                 full_prompt = f"[คำสั่งบังคับ: {sys_prompt}]\nคำถามของนักเรียน: {prompt}"
                 response = st.session_state.chat_session.send_message(full_prompt)
                 
-                # แสดงคำตอบ AI
                 with st.chat_message("assistant"):
                     st.markdown(response.text)
-                # บันทึกคำตอบลงสมอง
                 st.session_state.messages.append({"role": "assistant", "content": response.text})
             except Exception as e:
                 st.error("🚨 เกิดข้อผิดพลาดในการประมวลผล")
-                st.warning(str(e))
 
+# ================= ฝั่งขวา: ภารกิจและ Programiz =================
 with col2:
-    st.subheader("💻 พื้นที่ปฏิบัติการ (Coding Zone)")
-    st.info("💡 เปิด Google Colab เพื่อเขียนโค้ด แล้วใช้ฟีเจอร์แบ่งครึ่งหน้าจอ (Split Screen) เพื่อคุยกับ AI ฝั่งซ้ายไปพร้อมๆ กัน")
-    st.link_button("➡️ คลิกเปิด Google Colab สำหรับโจทย์วันนี้", "https://colab.research.google.com/")
+    st.subheader("🎯 ภารกิจการเรียนรู้ (Missions)")
+    
+    # เมนูเลือกภารกิจ
+    mission = st.radio("เลือกภารกิจวันนี้:",
+        ["Mission 1: 🤖 ตู้สั่งน้ำอัจฉริยะ (รับค่า & แสดงผล)",
+         "Mission 2: 🏥 คลินิก AI ประเมินสุขภาพ (If-Else)",
+         "Mission 3: 🔒 ระบบรักษาความปลอดภัย (While Loop)"]
+    )
     
     st.markdown("---")
-    st.markdown("### 📝 คู่มือการถาม AI (Prompt Cheat Sheet)")
-    st.markdown("- **สถาปนิก:** 'ช่วยออกแบบตรรกะโปรแกรมตัดเกรดให้หน่อย เริ่มยังไงดี?'")
-    st.markdown("- **บัดดี้:** 'คำสั่งที่รับข้อมูลทางคีย์บอร์ดเขียนยังไงนะ ขอคำใบ้หน่อย'")
-    st.markdown("- **นักสืบ:** 'รันแล้วขึ้น SyntaxError บรรทัดที่ 4 เกิดจากอะไร?'")
+    st.subheader("💻 พื้นที่ปฏิบัติการ (Coding Zone)")
+    st.info("💡 คลิกปุ่มด้านล่างเพื่อเปิด Programiz แล้วจัดหน้าจอแบบแบ่งครึ่ง (Split Screen) เพื่อพิมพ์โค้ด")
+    
+    # ปุ่มเปิด Programiz (ปุ่มใหญ่ สีเด่นชัด)
+    st.link_button("➡️ เปิดพื้นที่เขียนโค้ด (Programiz Online Compiler)", "https://www.programiz.com/python-programming/online-compiler/")
+    
+    st.markdown("---")
+    
+    # แสดงรายละเอียดโจทย์ตามภารกิจที่เลือก
+    if "Mission 1" in mission:
+        st.success("**🎯 เป้าหมายภารกิจที่ 1:**\nให้นักเรียนเขียนโปรแกรมรับชื่อลูกค้า รับเมนูที่สั่ง และคำนวณเงินทอน")
+        st.caption("💡 คำใบ้: ลองทักไปหา '1. สถาปนิกตรรกะ' ฝั่งซ้าย แล้วบอกว่า 'อยากเขียนโปรแกรมคิดเงินทอน เริ่มยังไงดี?'")
+    elif "Mission 2" in mission:
+        st.success("**🎯 เป้าหมายภารกิจที่ 2:**\nรับค่าน้ำหนัก ส่วนสูง คำนวณค่า BMI และแสดงผลลัพธ์ว่า อ้วน, ผอม, หรือ ปกติ")
+        st.caption("💡 คำใบ้: ภารกิจนี้มีการใช้เงื่อนไข ถ้าพิมพ์โค้ดแล้วขึ้น Error ให้รีบไปหา '3. สารวัตรนักสืบ' เลย!")
+    elif "Mission 3" in mission:
+        st.success("**🎯 เป้าหมายภารกิจที่ 3:**\nสร้างระบบจำลองการใส่รหัสผ่านตู้เซฟ ถ้าใส่ผิดให้โปรแกรมวนลูปถามใหม่จนกว่าจะถูก")
+        st.caption("💡 คำใบ้: ภารกิจนี้ใช้ While Loop ถ้าจำคำสั่งไม่ได้ ลองถาม '2. บัดดี้เขียนโค้ด' ดูนะ!")
