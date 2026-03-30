@@ -8,7 +8,7 @@ API_KEY = "AIzaSyBvpP_kLWH1iW6D5GTahf8CqYVdZK3l7W8"
 
 # เชื่อมต่อระบบ AI
 genai.configure(api_key=API_KEY)
-model = genai.GenerativeModel('gemini-1.5-flash')
+model = genai.GenerativeModel('gemini-pro')
 
 st.title("🚀 MASS-Py: Mission Control (Python & AI Agents)")
 
