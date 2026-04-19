@@ -112,7 +112,57 @@ with col1:
 
 with col2:
     tab1, tab2, tab3 = st.tabs(["🎯 ภารกิจ", "📤 ส่งชิ้นงาน", "🔐 Teacher Mode"])
-    # (เนื้อหาใน Tab เหมือนเวอร์ชันที่แล้ว...)
+    with col2:
+    tab1, tab2, tab3 = st.tabs(["🎯 ภารกิจ", "📤 ส่งชิ้นงาน", "🔐 Teacher Mode"])
+    
+    with tab1:
+        st.subheader("🎯 Programming Missions")
+        # ดึงรายชื่อภารกิจมาแสดง
+        mission_choice = st.radio("เลือกภารกิจ:", ["EP.1", "EP.2", "EP.3", "EP.4", "EP.5"], horizontal=True)
+        st.divider()
+        
+        # แสดงโจทย์ตาม EP ที่เลือก
+        if "EP.1" in mission_choice:
+            st.success("**EP.1: ตู้สั่งน้ำอัจฉริยะ**\nโจทย์: เขียนโปรแกรมรับชื่อลูกค้า รับเมนูน้ำ และคำนวณเงินทอน")
+        elif "EP.2" in mission_choice:
+            st.success("**EP.2: คลินิก AI ประเมินสุขภาพ**\nโจทย์: รับค่าน้ำหนัก ส่วนสูง เพื่อคำนวณและแสดงค่า BMI")
+        elif "EP.3" in mission_choice:
+            st.success("**EP.3: ระบบล็อคบ้านอัจฉริยะ**\nโจทย์: ใช้ While Loop เพื่อตรวจสอบรหัสผ่าน 3 ครั้ง")
+        
+        st.link_button("➡️ เปิดพื้นที่เขียนโค้ด (Programiz)", "https://www.programiz.com/python-programming/online-compiler/")
+        
+        if st.button(f"✅ เรียน {mission_choice} สำเร็จแล้ว"):
+            st.session_state.progress[mission_choice] = True
+            st.toast("บันทึกความก้าวหน้าสำเร็จ!")
+            st.rerun()
+
+    with tab2:
+        st.subheader("📤 ส่งหลักฐานการเรียนรู้")
+        up_file = st.file_uploader("แนบไฟล์โค้ด (.py) หรือภาพหน้าจอผลลัพธ์", type=['py', 'png', 'jpg', 'jpeg'])
+        if up_file:
+            st.success(f"ไฟล์ {up_file.name} เตรียมพร้อมส่ง")
+            if st.button("ยืนยันการส่งงานไปยังคุณครู"):
+                # จำลองการเขียนลง DB
+                record = {
+                    "เวลา": datetime.now().strftime("%d/%m/%Y %H:%M"),
+                    "ชื่อ": st.session_state.user_name,
+                    "เลขที่": st.session_state.user_no,
+                    "ตรรกะ": "ส่งไฟล์แนบ",
+                    "สถานะ": f"ส่งชิ้นงาน {mission_choice} สมบูรณ์"
+                }
+                st.session_state.db_records.append(record)
+                st.balloons()
+                st.info(f"บันทึกข้อมูลสำเร็จเมื่อ: {datetime.now().strftime('%H:%M:%S')}")
+
+    with tab3:
+        st.subheader("🔐 ศูนย์ข้อมูลครู (Teacher Mode)")
+        teacher_pw = st.text_input("รหัสผ่านผู้สอน:", type="password")
+        if teacher_pw == "obec2026":
+            st.write("### 📊 ฐานข้อมูลการส่งงาน (Data Log)")
+            if len(st.session_state.db_records) > 0:
+                st.dataframe(st.session_state.db_records, use_container_width=True)
+            else:
+                st.info("ยังไม่มีข้อมูลการส่งงานในระบบขณะนี้")
     with tab3:
         st.subheader("🔐 ศูนย์ข้อมูลครู")
         if st.text_input("รหัสผ่าน:", type="password") == "obec2026":
