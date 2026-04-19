@@ -17,8 +17,7 @@ except Exception:
 # ฟังก์ชันดึงโมเดล AI
 # แก้ไขฟังก์ชันดึงโมเดลให้ฉลาดขึ้น
 def get_working_model():
-    # ลองใช้ชื่อเต็มรูปแบบที่ระบบเก่าก็น่าจะรู้จัก
-    return genai.GenerativeModel('models/gemini-pro')
+    return genai.GenerativeModel('gemini-pro')
     try:
         # ตรวจสอบรายชื่อโมเดลที่รองรับในระบบปัจจุบัน
         available_models = [m.name for m in genai.list_models() if 'generateContent' in m.supported_generation_methods]
