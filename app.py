@@ -174,7 +174,7 @@ with col2:
 
     with tab3:
         st.subheader("🔒 Teacher Dashboard")
-        admin_pw = st.text_input("123456789", type="password")
+        admin_pw = st.text_input("รหัสผ่านคุณครู", type="password")
         if admin_pw == "obec2026":
             st.write("📋 **สรุปสถานะผู้เรียนรายบุคคล**")
             # แสดงตารางสรุปข้อมูล
