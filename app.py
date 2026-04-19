@@ -70,14 +70,23 @@ with col1:
     for msg in st.session_state.messages:
         with st.chat_message(msg["role"]): st.markdown(msg["content"])
 
-    if prompt := st.chat_input("ปรึกษา AI ที่นี่..."):
-        with st.chat_message("user"): st.markdown(prompt)
-        st.session_state.messages.append({"role": "user", "content": prompt})
-        
-        with st.spinner("กำลังคิด..."):
-            response = st.session_state.chat_session.send_message(prompt)
-            with st.chat_message("assistant"): st.markdown(response.text)
-            st.session_state.messages.append({"role": "assistant", "content": response.text})
+ with st.spinner("บัดดี้กำลังคิด..."):
+            try:
+                # เพิ่มกฎเหล็กและส่งข้อความ
+                full_prompt = f"[คำสั่งบังคับ: {sys_prompt}]\nคำถาม: {prompt}"
+                response = st.session_state.chat_session.send_message(full_prompt)
+                
+                # แสดงคำตอบ
+                with st.chat_message("assistant"):
+                    st.markdown(response.text)
+                st.session_state.messages.append({"role": "assistant", "content": response.text})
+                
+            except Exception as e:
+                # หากเกิด Error ระบบจะไม่ล่ม แต่จะแสดงคำแนะนำแทน
+                st.error("🚨 บัดดี้ขาดการติดต่อชั่วคราว (Connection Timeout)")
+                st.warning("💡 วิธีแก้: 1. ตรวจสอบเน็ต 2. ลองพิมพ์ใหม่อีกครั้ง หรือ 3. กด 'Reboot App' ที่เมนูมุมขวา")
+                # บันทึก log ข้อผิดพลาดไว้ดูเบื้องหลัง
+                print(f"Error detail: {str(e)}")
 
 # ================= ฝั่งขวา: ภารกิจ & ระบบส่งงาน =================
 with col2:
