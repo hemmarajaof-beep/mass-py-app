@@ -7,8 +7,8 @@ st.set_page_config(layout="wide", page_title="MASS-Py: Mission Control V.4")
 
 # --- 2. ระบบดึงกุญแจ API อย่างปลอดภัย ---
 try:
-    # ดึงค่าจาก Streamlit Secrets
-    API_KEY = st.secrets["AIzaSyAO2dK_ICM1o-FPjzhJ58xzYR31NWTG9cs"]
+    # แก้ไขบรรทัดนี้: ให้ใช้ชื่อตัวแปร "API_KEY" (ชื่อสมมติที่ตรงกับหน้า Secrets)
+    API_KEY = st.secrets["API_KEY"] 
     genai.configure(api_key=API_KEY)
 except Exception:
     st.error("🚨 ไม่พบกุญแจ API ในระบบ Secrets กรุณาตรวจสอบการตั้งค่าหลังบ้าน")
