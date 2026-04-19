@@ -17,18 +17,19 @@ except Exception:
 # ฟังก์ชันดึงโมเดล AI
 # แก้ไขฟังก์ชันดึงโมเดลให้ฉลาดขึ้น
 def get_working_model():
+    # พยายามใช้ชื่อมาตรฐานก่อน
+    model_name = 'gemini-1.5-flash'
     try:
-        # พยายามลิสต์รายชื่อโมเดลที่มีใน API Key นี้
-        for m in genai.list_models():
-            # ค้นหาโมเดลที่รองรับการสร้างเนื้อหา (generateContent) และมีชื่อ gemini
-            if 'generateContent' in m.supported_generation_methods:
-                if 'gemini-1.5-flash' in m.name:
-                    return genai.GenerativeModel(m.name)
-        # ถ้าหาไม่เจอจริงๆ ให้ใช้ชื่อมาตรฐานแบบระบุเวอร์ชันเต็ม
-        return genai.GenerativeModel('models/gemini-1.5-flash-latest')
-    except Exception:
-        # กรณีเลวร้ายสุด ให้กลับไปใช้ชื่อพื้นฐาน
-        return genai.GenerativeModel('gemini-1.5-flash')
+        # ตรวจสอบรายชื่อโมเดลที่รองรับในระบบปัจจุบัน
+        available_models = [m.name for m in genai.list_models() if 'generateContent' in m.supported_generation_methods]
+        # ถ้ามีชื่อที่ยาวกว่า (เช่น models/...) ให้ใช้ชื่อนั้น
+        for m in available_models:
+            if 'gemini-1.5-flash' in m:
+                model_name = m
+                break
+    except:
+        pass
+    return genai.GenerativeModel(model_name)
 
 # --- 3. ระบบจัดการสถานะผู้เรียน (Session State) ---
 if "user_name" not in st.session_state:
